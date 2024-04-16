@@ -4,6 +4,7 @@
 #include "BLEServerManager.hpp"
 #include "ParameterIndexService.hpp"
 #include "ParameterValueService.hpp"
+#include "ConfigurationService.hpp"
 ParameterIndexService *paramIndexService = NULL;
 ParameterValueService *paramValueService = NULL;
 bool deviceConnected = false;
@@ -35,6 +36,7 @@ void BLEServerManager::startAdvertising()
     BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
     pAdvertising->addServiceUUID(PARAMETER_INDEX_SERVICE_UUID);
     pAdvertising->addServiceUUID(PARAMETER_VALUE_SERVICE_UUID);
+    pAdvertising->addServiceUUID(CONFIGURATION_SERVICE_UUID);
     pAdvertising->setScanResponse(false);
     pAdvertising->setMinPreferred(0x0);
     BLEDevice::startAdvertising();

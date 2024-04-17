@@ -8,7 +8,7 @@
 #endif
 
 #if DEBUGENABLE == 1
-    #define DEBUG(...) USBSerial.print(__VA_ARGS__)
+    #define DEBUG(...) USBSerial.printf(__VA_ARGS__)
 #endif
 
 #endif /* DEBUG_MACROS_H */

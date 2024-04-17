@@ -1,7 +1,8 @@
 #include "sensor/Bme680Adapter.hpp"
 #include <Adafruit_BME680.h>
+#include <Wire.h>
 
-static Adafruit_BME680 bme;
+static Adafruit_BME680 bme(&Wire);
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 float gas_reference = 250000;

@@ -6,6 +6,7 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <esp_sleep.h>
+#include <Wire.h>
 
 #include "BLEServerManager.hpp"
 #include <ParameterIndexService.hpp>
@@ -15,6 +16,8 @@
 BLEServerManager *pServerManager = nullptr;
 SensorManager *sensorManager = nullptr;
 
+#define SDA_PIN 8
+#define SCL_PIN 9
 
 
 void setup()
@@ -22,6 +25,9 @@ void setup()
   // DEBUGINIT(115200);
   USBSerial.begin(115200);
   while (!USBSerial) {}
+
+  Wire.setPins(SDA_PIN, SCL_PIN);
+
   // Create the BLE Device
   BLEDevice::init("ESP32");
 

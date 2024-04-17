@@ -9,11 +9,13 @@ public:
 
     // Implementation of the AbstractSensor methods
     void init() override;
-    void beginReading(ParameterType parameter) override;
+    void read(ParameterType parameter) override;
     float readValue(ParameterType parameter) override;
     bool test() override;
 
 private:
+    float calculateIAQ();
+    void getGasReference();
     // Add any private members needed for BME680 initialization
 };
 

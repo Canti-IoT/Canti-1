@@ -10,14 +10,13 @@ public:
     // Function to add a sensor to the manager
     void addSensor(ParameterType parameter, int recurrence, AbstractSensor* sensor);
 
-    // Function to get the sensor data for a given parameter
-    SensorData* getSensor(ParameterType parameter);
-
     // Function to set recurrence for a sensor with a given index
     void setRecurrenceWithIndex(ParameterType index, int recurrence);
 
     // Function to begin reading for all sensors
-    void beginReadingAll();
+    void initAll();
+    void testAll();
+    void readAll();
 
     // Function to get the parameter type by index
     float getValue(int index);

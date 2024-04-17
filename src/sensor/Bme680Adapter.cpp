@@ -19,6 +19,11 @@ Bme680Adapter::Bme680Adapter()
 // Implementation of the AbstractSensor init() method
 void Bme680Adapter::init()
 {
+    if(initiated)
+    {
+        return;
+    }
+    
     // Initialize BME680 sensor
     if (!bme.begin())
     {

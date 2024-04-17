@@ -7,6 +7,7 @@ enum ParameterType {
     TEMPERATURE = 10,
     HUMIDITY = 20,
     PRESSURE = 30,
+    ALTITUDE = 31,
     VOCS = 40,
     NOISE = 50,
     ILLUMINATION = 60,

@@ -10,15 +10,18 @@
 #include "BLEServerManager.hpp"
 #include <ParameterIndexService.hpp>
 #include <ParameterValueService.hpp>
+#include <SensorManager.hpp>
 
 BLEServerManager *pServerManager = nullptr;
-
+SensorManager *sensorManager = nullptr;
 
 
 
 void setup()
 {
-  DEBUGINIT(115200);
+  // DEBUGINIT(115200);
+  USBSerial.begin(115200);
+  while (!USBSerial) {}
   // Create the BLE Device
   BLEDevice::init("ESP32");
 
@@ -28,6 +31,9 @@ void setup()
   // Start advertising
   pServerManager->startAdvertising();
 
+  sensorManager = new SensorManager();
+  sensorManager->initAll();
+  sensorManager->testAll();
   //   // Set wake-up time to 60 seconds (in microseconds)
   // esp_sleep_enable_timer_wakeup(60 * 1000000);
   // delay(1000);
@@ -36,11 +42,33 @@ void setup()
   // DEBUG("Exited Light Sleep mode");
 }
 
+uint64_t last_read = 0;
+
 void loop()
 {
   delay(1000);    
   DEBUG(".\n");
   pServerManager->loopCycle();
+
+  DEBUG("%u", millis()); 
+  if (last_read == 0 || last_read + 15000 < millis())
+  {
+    DEBUG("Read started\n");
+    sensorManager->initAll();
+    sensorManager->readAll();
+    float temperature = sensorManager->getValue(TEMPERATURE);
+    float humidity = sensorManager->getValue(HUMIDITY);
+    float pressure = sensorManager->getValue(PRESSURE);
+    float altitude = sensorManager->getValue(ALTITUDE);
+    float iaq = sensorManager->getValue(VOCS);
+    DEBUG("temp: %f\n", temperature);
+    DEBUG("hum: %f\n", humidity);
+    DEBUG("pre: %f\n", pressure);
+    DEBUG("alt: %f\n", altitude);
+    DEBUG("iaq: %f\n", iaq);
+    last_read = millis();
+    DEBUG("Read finished\n");
+  }
 }
 
 #endif

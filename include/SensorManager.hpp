@@ -8,7 +8,7 @@ public:
     SensorManager(); // Constructor
 
     // Function to add a sensor to the manager
-    void addSensor(ParameterType parameter, int recurrence, AbstractSensor& sensor);
+    void addSensor(ParameterType parameter, int recurrence, AbstractSensor* sensor);
 
     // Function to get the sensor data for a given parameter
     SensorData* getSensor(ParameterType parameter);

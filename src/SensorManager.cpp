@@ -4,17 +4,16 @@
 SensorManager::SensorManager() {
     currentSize = 0;
 
-    Bme680Adapter sensor();
     // Initialize SensorData elements
     for (int i = 0; i < MAX_SENSORS; ++i) {
         sensors[i].parameter = ParameterType::NONE;
         sensors[i].recurrence = 0;
-        sensors[i].sensor = &sensor; // Initialize sensor pointer to nullptr
+        sensors[i].sensor = nullptr; // Initialize sensor pointer to nullptr
         sensors[i].value = 0.0f;
     }
 }
 
-void SensorManager::addSensor(ParameterType parameter, int recurrence, AbstractSensor& sensor) {
+void SensorManager::addSensor(ParameterType parameter, int recurrence, AbstractSensor* sensor) {
     if (currentSize < MAX_SENSORS) {
         sensors[currentSize].parameter = parameter; 
         sensors[currentSize].recurrence = recurrence; 
@@ -46,7 +45,7 @@ void SensorManager::setRecurrenceWithIndex(ParameterType index, int recurrence) 
 
 void SensorManager::beginReadingAll() {
     for (int i = 0; i < currentSize; ++i) {
-        sensors[i].sensor.beginReading(sensors[i].parameter);
+        sensors[i].sensor->beginReading(sensors[i].parameter);
     }
 }
 

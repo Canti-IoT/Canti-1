@@ -1,17 +1,10 @@
 #include "SensorManager.hpp"
 #include <sensor/Bme680Adapter.hpp>
+#include <sensor/Veml7700Adapter.hpp>
 #include <debug.h>
 
 SensorManager::SensorManager() {
     currentSize = 0;
-
-    // Initialize SensorData elements
-    // for (int i = 0; i < MAX_SENSORS; ++i) {
-    //     sensors[i].parameter = ParameterType::NONE;
-    //     sensors[i].recurrence = 0;
-    //     sensors[i].sensor = nullptr; // Initialize sensor pointer to nullptr
-    //     sensors[i].value = 0.0f;
-    // }
 
     Bme680Adapter* bme = new Bme680Adapter();
     addSensor(TEMPERATURE, 60, bme);
@@ -19,6 +12,8 @@ SensorManager::SensorManager() {
     addSensor(PRESSURE, 60, bme);
     addSensor(ALTITUDE, 60, bme);
     addSensor(VOCS, 60, bme);
+    Veml7700Adapter* veml = new Veml7700Adapter();
+    addSensor(ILLUMINATION, 60, veml);
 }
 
 void SensorManager::addSensor(ParameterType parameter, int recurrence, AbstractSensor* sensor) {
@@ -59,7 +54,6 @@ void SensorManager::testAll() {
 void SensorManager::readAll() {
     for (int i = 0; i < currentSize; ++i) {
         sensors[i].sensor->read(sensors[i].parameter);
-        DEBUG("Sensor status: %d\n", sensors[i].sensor->initiated);
     }
 }
 

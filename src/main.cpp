@@ -68,12 +68,14 @@ void loop()
     float altitude = sensorManager->getValue(ALTITUDE);
     float iaq = sensorManager->getValue(VOCS);
     float lux = sensorManager->getValue(ILLUMINATION);
+    float db = sensorManager->getValue(NOISE);
     DEBUG("temp: %f\n", temperature);
     DEBUG("hum: %f\n", humidity);
     DEBUG("pre: %f\n", pressure);
     DEBUG("alt: %f\n", altitude);
     DEBUG("iaq: %f\n", iaq);
     DEBUG("lux: %f\n", lux);
+    DEBUG("dbA: %f\n", db);
     last_read = millis();
     DEBUG("Read finished\n");
   }

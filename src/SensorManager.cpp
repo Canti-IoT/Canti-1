@@ -1,19 +1,24 @@
 #include "SensorManager.hpp"
 #include <sensor/Bme680Adapter.hpp>
 #include <sensor/Veml7700Adapter.hpp>
+#include <sensor/AdcMicrophoneAdapter.hpp>
+#include "sensor/SHT40Adapter.hpp"
 #include <debug.h>
 
 SensorManager::SensorManager() {
     currentSize = 0;
 
+    SHT40Adapter* sht40 = new SHT40Adapter();   
     Bme680Adapter* bme = new Bme680Adapter();
-    addSensor(TEMPERATURE, 60, bme);
+    addSensor(TEMPERATURE, 60, sht40);
     addSensor(HUMIDITY, 60, bme);
     addSensor(PRESSURE, 60, bme);
     addSensor(ALTITUDE, 60, bme);
     addSensor(VOCS, 60, bme);
     Veml7700Adapter* veml = new Veml7700Adapter();
     addSensor(ILLUMINATION, 60, veml);
+    AdcMicrophoneAdapter *mic = new AdcMicrophoneAdapter();
+    addSensor(NOISE, 60, mic);
 }
 
 void SensorManager::addSensor(ParameterType parameter, int recurrence, AbstractSensor* sensor) {
@@ -40,14 +45,12 @@ void SensorManager::setRecurrenceWithIndex(ParameterType index, int recurrence) 
 void SensorManager::initAll() {
     for (int i = 0; i < currentSize; ++i) {
         sensors[i].sensor->init();
-        DEBUG("Sensor init status: %d\n", sensors[i].sensor->initiated);
     }
 }
 
 void SensorManager::testAll() {
     for (int i = 0; i < currentSize; ++i) {
         sensors[i].sensor->test();
-        DEBUG("Sensor test status: %d\n", sensors[i].sensor->testSucces);
     }
 }
 

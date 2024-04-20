@@ -48,7 +48,7 @@ void setup()
   // DEBUG("Exited Light Sleep mode");
 }
 
-uint64_t last_read = 0;
+uint64_t last_read_main = 0;
 
 void loop()
 {
@@ -57,7 +57,7 @@ void loop()
   pServerManager->loopCycle();
 
   DEBUG("%u", millis()); 
-  if (last_read == 0 || last_read + 15000 < millis())
+  if (last_read_main == 0 || last_read_main + 15000 < millis())
   {
     DEBUG("Read started\n");
     sensorManager->initAll();
@@ -76,7 +76,7 @@ void loop()
     DEBUG("iaq: %f\n", iaq);
     DEBUG("lux: %f\n", lux);
     DEBUG("dbA: %f\n", db);
-    last_read = millis();
+    last_read_main = millis();
     DEBUG("Read finished\n");
   }
 }

@@ -6,9 +6,7 @@
 
 struct SensorData {
     ParameterType parameter;
-    int recurrence;
     AbstractSensor *sensor;
-    float value;
 };
 
 #endif

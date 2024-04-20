@@ -5,13 +5,18 @@
 #include "sensor/SHT40Adapter.hpp"
 #include <debug.h>
 
+RTC_DATA_ATTR float value[MAX_SENSORS];
+RTC_DATA_ATTR float last_read[MAX_SENSORS];
+RTC_DATA_ATTR int recurrence[MAX_SENSORS];
+
+
 SensorManager::SensorManager() {
     currentSize = 0;
 
     SHT40Adapter* sht40 = new SHT40Adapter();   
     Bme680Adapter* bme = new Bme680Adapter();
     addSensor(TEMPERATURE, 60, sht40);
-    addSensor(HUMIDITY, 60, bme);
+    addSensor(HUMIDITY, 60, sht40);
     addSensor(PRESSURE, 60, bme);
     addSensor(ALTITUDE, 60, bme);
     addSensor(VOCS, 60, bme);
@@ -24,19 +29,17 @@ SensorManager::SensorManager() {
 void SensorManager::addSensor(ParameterType parameter, int recurrence, AbstractSensor* sensor) {
     if (currentSize < MAX_SENSORS) {
         sensors[currentSize].parameter = parameter; 
-        sensors[currentSize].recurrence = recurrence; 
         sensors[currentSize].sensor = sensor;
-        sensors[currentSize].value = 0.0f;
         currentSize += 1;
     } else {
         // Handle error: array full
     }
 }
 
-void SensorManager::setRecurrenceWithIndex(ParameterType index, int recurrence) {
+void SensorManager::setRecurrenceWithIndex(ParameterType index, int new_recurrence) {
     for (int i = 0; i < currentSize; ++i) {
         if (sensors[i].parameter == index) {
-            sensors[i].recurrence = recurrence;
+            recurrence[i] = new_recurrence;
             break; // Exit loop once recurrence is set
         }
     }
@@ -60,12 +63,18 @@ void SensorManager::readAll() {
     }
 }
 
+void SensorManager::loop()
+{
+    
+}
+
 float SensorManager::getValue(int index) {
     for (int i =  0; i < currentSize; i++)
     {
         if (index == sensors[i].parameter){
-            sensors[i].value = sensors[i].sensor->readValue(sensors[i].parameter);
-            return sensors[i].value;
+            value[i] = sensors[i].sensor->readValue(sensors[i].parameter);
+            last_read[i] = 1;
+            return value[i];
         }
     }
 }

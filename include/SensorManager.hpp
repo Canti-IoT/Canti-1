@@ -2,6 +2,7 @@
 #define SENSOR_MANAGER_H
 
 #include "sensor/ParameterSensor.hpp"
+#define MAX_SENSORS 8
 
 class SensorManager {
 public:
@@ -18,13 +19,15 @@ public:
     void testAll();
     void readAll();
 
+    // sensor manager loop function
+    void loop();
+
     // Function to get the parameter type by index
     float getValue(int index);
 
     bool validateIndex(int index);
 
 private:
-    static const int MAX_SENSORS = 8; // Maximum number of sensors
     SensorData sensors[MAX_SENSORS]; // Array of SensorData
     int currentSize; // Current size of the array
 };

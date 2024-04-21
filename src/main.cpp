@@ -36,7 +36,7 @@ void setup()
   Wire.setPins(SDA_PIN, SCL_PIN);
 
   // Create the BLE Device
-  BLEDevice::init("ESP32");
+  BLEDevice::init("Canti 1");
 
   // Initialize the BLE server manager
   pServerManager = new BLEServerManager();

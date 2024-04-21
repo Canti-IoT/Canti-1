@@ -16,6 +16,8 @@ public:
     // Function to add a sensor to the manager
     void addSensor(ParameterType parameter, int recurrence, AbstractSensor* sensor);
 
+    ParameterType getSupportedParameter(bool reset = false);
+
     // Function to set recurrence for a sensor with a given index
     void setRecurrenceWithIndex(ParameterType index, int recurrence);
 

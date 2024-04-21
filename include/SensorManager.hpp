@@ -2,11 +2,16 @@
 #define SENSOR_MANAGER_H
 
 #include "sensor/ParameterSensor.hpp"
+
 #define MAX_SENSORS 8
 
 class SensorManager {
 public:
-    SensorManager(); // Constructor
+    // Function to get the singleton instance
+    static SensorManager& getInstance() {
+        static SensorManager instance;
+        return instance;
+    }
 
     // Function to add a sensor to the manager
     void addSensor(ParameterType parameter, int recurrence, AbstractSensor* sensor);
@@ -28,8 +33,17 @@ public:
     bool validateIndex(int index);
 
 private:
+    SensorManager(); // Private constructor to prevent instantiation
     SensorData sensors[MAX_SENSORS]; // Array of SensorData
     int currentSize; // Current size of the array
+};
+
+enum class ManagingStates {
+    INITIALIZATION,
+    TESTING,
+    READING,
+    WAITING,
+    NUM_STATES // Just to keep track of the number of states
 };
 
 #endif

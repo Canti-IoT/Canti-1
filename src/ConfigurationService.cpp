@@ -1,16 +1,16 @@
 #include "ConfigurationService.hpp"
 #include <BLE2902.h>
 
-class IndexRecurrenceCharacteristicCallback : public BLECharacteristicCallbacks {
+class ConfigCharacteristicCallback : public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic);
     void onRead(BLECharacteristic *pCharacteristic);
 };
 
-void IndexRecurrenceCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic) {
+void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic) {
     // Handle write event
 }
 
-void IndexRecurrenceCharacteristicCallback::onRead(BLECharacteristic *pCharacteristic) {
+void ConfigCharacteristicCallback::onRead(BLECharacteristic *pCharacteristic) {
     // Handle read event
 }
 
@@ -20,7 +20,7 @@ ConfigurationService::ConfigurationService(BLEServer *pServer) {
 
     // Create a characteristic
     pCharacteristic = pService->createCharacteristic(
-        INDEX_RECURRENCE_CHARACTERISTIC_UUID,
+        CONFIG_CHARACTERISTIC_UUID,
         BLECharacteristic::PROPERTY_READ |
         BLECharacteristic::PROPERTY_WRITE |
         BLECharacteristic::PROPERTY_NOTIFY |
@@ -28,14 +28,14 @@ ConfigurationService::ConfigurationService(BLEServer *pServer) {
     );
 
     // Set characteristic callbacks
-    pCharacteristic->setCallbacks(new IndexRecurrenceCharacteristicCallback());
+    pCharacteristic->setCallbacks(new ConfigCharacteristicCallback());
 
    // Create Client Characteristic Configuration Descriptor (CCC) for characteristic
     pCharacteristic->addDescriptor(new BLE2902());
 
     // Create Characteristic User Description Descriptor for characteristic
     BLEDescriptor pDescriptorUserDescription(BLEUUID((uint16_t)0x2901));
-    pDescriptorUserDescription.setValue("index-recurrence");
+    pDescriptorUserDescription.setValue("config");
     pCharacteristic->addDescriptor(&pDescriptorUserDescription);
 
     pService->start();

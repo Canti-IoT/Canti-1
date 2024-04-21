@@ -12,6 +12,7 @@
 #include <ParameterIndexService.hpp>
 #include <ParameterValueService.hpp>
 #include <SensorManager.hpp>
+#include <RTCSingleton.hpp>
 
 BLEServerManager *pServerManager = nullptr;
 SensorManager *sensorManager = nullptr;
@@ -19,12 +20,18 @@ SensorManager *sensorManager = nullptr;
 #define SDA_PIN 8
 #define SCL_PIN 9
 
+#define GMT_OFFSET (3600 * 3)
+// ESP32Time RTCSingleton::rtc(GMT_OFFSET);
 
 void setup()
 {
   // DEBUGINIT(115200);
   USBSerial.begin(115200);
-  while (!USBSerial) {}
+  while (!USBSerial)
+  {
+    delay(20);
+  }
+  DEBUG("Setup started\n");
 
   Wire.setPins(SDA_PIN, SCL_PIN);
 
@@ -37,9 +44,15 @@ void setup()
   // Start advertising
   pServerManager->startAdvertising();
 
-  sensorManager = new SensorManager();
-  sensorManager->initAll();
-  sensorManager->testAll();
+  RTCSingleton::rtc.offset = GMT_OFFSET;
+
+  sensorManager = &SensorManager::getInstance();
+
+  // if (RTCSingleton::rtc.getYear() != 2024)
+  // {
+    RTCSingleton::rtc.setTime(BUILD_TIMESTAMP+30);
+  // }
+  DEBUG("%d %d %d", RTCSingleton::rtc.getYear(), RTCSingleton::rtc.getMonth(), RTCSingleton::rtc.getDay());
   //   // Set wake-up time to 60 seconds (in microseconds)
   // esp_sleep_enable_timer_wakeup(60 * 1000000);
   // delay(1000);
@@ -52,16 +65,13 @@ uint64_t last_read_main = 0;
 
 void loop()
 {
-  delay(1000);    
-  DEBUG(".\n");
+  delay(500);
+  DEBUG("%d:%d:%d:%d\n", RTCSingleton::rtc.getHour(), RTCSingleton::rtc.getMinute(), RTCSingleton::rtc.getSecond(), RTCSingleton::rtc.getMillis());
   pServerManager->loopCycle();
-
-  DEBUG("%u", millis()); 
+  sensorManager->loop();
   if (last_read_main == 0 || last_read_main + 15000 < millis())
   {
     DEBUG("Read started\n");
-    sensorManager->initAll();
-    sensorManager->readAll();
     float temperature = sensorManager->getValue(TEMPERATURE);
     float humidity = sensorManager->getValue(HUMIDITY);
     float pressure = sensorManager->getValue(PRESSURE);

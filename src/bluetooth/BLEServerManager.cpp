@@ -1,10 +1,10 @@
 #include <BLEDevice.h>
 #include <Arduino.h>
 
-#include "BLEServerManager.hpp"
-#include "ParameterIndexService.hpp"
-#include "ParameterValueService.hpp"
-#include "ConfigurationService.hpp"
+#include "bluetooth/BLEServerManager.hpp"
+#include "bluetooth/ParameterIndexService.hpp"
+#include "bluetooth/ParameterValueService.hpp"
+#include "bluetooth/ConfigurationService.hpp"
 ParameterIndexService *paramIndexService = NULL;
 ParameterValueService *paramValueService = NULL;
 ConfigurationService *configurationService = NULL;

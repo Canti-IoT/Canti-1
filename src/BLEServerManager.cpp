@@ -7,6 +7,7 @@
 #include "ConfigurationService.hpp"
 ParameterIndexService *paramIndexService = NULL;
 ParameterValueService *paramValueService = NULL;
+ConfigurationService *configurationService = NULL;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 
@@ -29,6 +30,7 @@ BLEServerManager::BLEServerManager()
     // Create the BLE Services
     paramIndexService = new ParameterIndexService(pServer);
     paramValueService = new ParameterValueService(pServer);
+    configurationService = new ConfigurationService(pServer);
 }
 
 void BLEServerManager::startAdvertising()

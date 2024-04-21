@@ -2,15 +2,10 @@
 #ifndef PIO_UNIT_TESTING
 #include <debug.h>
 #include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
 #include <esp_sleep.h>
 #include <Wire.h>
 
-#include "BLEServerManager.hpp"
-#include <ParameterIndexService.hpp>
-#include <ParameterValueService.hpp>
+#include "bluetooth/BLEServerManager.hpp"
 #include <SensorManager.hpp>
 #include <RTCSingleton.hpp>
 
@@ -37,21 +32,16 @@ void setup()
 
   // Create the BLE Device
   BLEDevice::init("Canti 1");
-
   // Initialize the BLE server manager
   pServerManager = new BLEServerManager();
-
   // Start advertising
   pServerManager->startAdvertising();
 
   RTCSingleton::rtc.offset = GMT_OFFSET;
+  RTCSingleton::rtc.setTime(BUILD_TIMESTAMP+30);
 
   sensorManager = &SensorManager::getInstance();
 
-  // if (RTCSingleton::rtc.getYear() != 2024)
-  // {
-    RTCSingleton::rtc.setTime(BUILD_TIMESTAMP+30);
-  // }
   DEBUG("%d %d %d", RTCSingleton::rtc.getYear(), RTCSingleton::rtc.getMonth(), RTCSingleton::rtc.getDay());
   //   // Set wake-up time to 60 seconds (in microseconds)
   // esp_sleep_enable_timer_wakeup(60 * 1000000);
@@ -66,11 +56,11 @@ uint64_t last_read_main = 0;
 void loop()
 {
   delay(500);
-  DEBUG("%d:%d:%d:%d\n", RTCSingleton::rtc.getHour(), RTCSingleton::rtc.getMinute(), RTCSingleton::rtc.getSecond(), RTCSingleton::rtc.getMillis());
   pServerManager->loopCycle();
   sensorManager->loop();
   if (last_read_main == 0 || last_read_main + 15000 < millis())
   {
+    TIMESTAMP();
     DEBUG("Read started\n");
     float temperature = sensorManager->getValue(TEMPERATURE);
     float humidity = sensorManager->getValue(HUMIDITY);
@@ -87,6 +77,7 @@ void loop()
     DEBUG("lux: %f\n", lux);
     DEBUG("dbA: %f\n", db);
     last_read_main = millis();
+    TIMESTAMP();
     DEBUG("Read finished\n");
   }
 }

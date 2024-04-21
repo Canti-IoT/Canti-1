@@ -2,11 +2,18 @@
 #include <BLE2902.h>
 #include <debug.h>
 #include <SensorManager.hpp>
+#include <RTCSingleton.hpp>
 
 uint8_t cmd = 0;
 uint8_t arg = 0;
 SensorManager *sensorManager2 = nullptr;
 uint8_t response[20] = {};
+
+static inline void setRecurrenceBytes(uint32_t recurrence);
+static inline uint32_t getRecurrenceBytes(const uint8_t *data);
+static inline void setAlarmComand(uint8_t alarmIndex, const std::string &value);
+static inline void setUnixTimeBytes(uint64_t unixTime);
+static inline uint64_t getUnixTimeBytes(const uint8_t *data);
 
 class ConfigCharacteristicCallback : public BLECharacteristicCallbacks
 {
@@ -41,19 +48,9 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
     case 0xF1: // Command for accessing recurrence configuration
         if (value.length() >= 7)
         {
-            // Extract the recurrence value from bytes 3 to 6
-            uint32_t recurrenceValue = 0;
-            for (int byte = 0; byte < 4; byte++)
-            {
-                recurrenceValue |= value[3 + byte] << (3 - byte) * 8;
-            }
+            uint32_t recurrenceValue = getRecurrenceBytes(reinterpret_cast<const uint8_t *>(value.data()));
             DEBUG("New REcurrence %d for p %d\n", recurrenceValue, arg);
             sensorManager2->setRecurrenceWithIndex(static_cast<ParameterType>(arg), recurrenceValue);
-            // Call function to update recurrence configuration
-            // updateRecurrence(arg, recurrenceValue);
-
-            // Read and store the recurrence value for future use
-            // (if necessary)
         }
         else if (value.length() >= 2)
         {
@@ -61,23 +58,29 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
             uint32_t recurrence = sensorManager2->getRecurrenceWithIndex(static_cast<ParameterType>(arg));
             response[0] = cmd;
             response[1] = arg;
-            response[3] = recurrence >> 24;
-            response[4] = recurrence >> 16;
-            response[5] = recurrence >> 8;
-            response[6] = recurrence;
+            setRecurrenceBytes(recurrence);
             pCharacteristic->setValue(response, 7);
             pCharacteristic->notify();
         }
         break;
 
     case 0xF2: // Command for resetting to default recurrence
-        // Implement the logic to handle resetting to default recurrence
+        if (arg != 0)
+        {
+            sensorManager2->setRecurrenceWithIndex(static_cast<ParameterType>(arg), DEFAULT_RECURRENCE);
+            response[0] = cmd;
+            response[1] = arg;
+            setRecurrenceBytes(DEFAULT_RECURRENCE);
+            pCharacteristic->setValue(response, 7);
+            pCharacteristic->notify();
+        }
         break;
 
     case 0xA0: // Command to set alarm parameter 0
     case 0xA1: // Command to set alarm parameter 1
     case 0xA2: // Command to set alarm parameter 2
         // Implement the logic to handle setting alarms
+        setAlarmComand(cmd - 0xA0, value);
         break;
 
     case 0xB0: // Command to disable alarm 0
@@ -93,16 +96,24 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
         break;
 
     case 0xEE: // Command for time configuration
-        if (value.length() >= 10)
+        if (value.length() >= 11)
         {
             // Extract UNIXTIME from bytes 3 to 10
-            uint64_t unixTime = *((uint64_t *)&value[3]);
-
-            // Call function to set time configuration
-            // setTimeConfiguration(unixTime);
-
-            // Read and store the UNIXTIME for future use
-            // (if necessary)
+            uint64_t unixTime = getUnixTimeBytes(reinterpret_cast<const uint8_t *>(value.data()));
+            RTCSingleton::rtc.setTime(unixTime);
+            response[0] = cmd;
+            response[1] = 0;
+            setUnixTimeBytes(unixTime);
+            pCharacteristic->setValue(response, 11);
+            pCharacteristic->notify();
+        }
+        else
+        {
+            response[0] = cmd;
+            response[1] = 0;
+            setUnixTimeBytes(RTCSingleton::rtc.getEpoch());
+            pCharacteristic->setValue(response, 11);
+            pCharacteristic->notify();
         }
         break;
 
@@ -142,6 +153,11 @@ void ConfigCharacteristicCallback::onRead(BLECharacteristic *pCharacteristic)
         break;
 
     case 0xEE: // Command for time configuration
+        response[0] = cmd;
+        response[1] = 0;
+        setUnixTimeBytes(RTCSingleton::rtc.getEpoch());
+        pCharacteristic->setValue(response, 11);
+        pCharacteristic->notify();
         break;
 
     default:
@@ -181,4 +197,47 @@ ConfigurationService::ConfigurationService(BLEServer *pServer)
 void ConfigurationService::noitify()
 {
     pCharacteristic->notify();
+}
+
+static inline void setRecurrenceBytes(uint32_t recurrence)
+{
+    response[3] = recurrence >> 24;
+    response[4] = recurrence >> 16;
+    response[5] = recurrence >> 8;
+    response[6] = recurrence;
+}
+
+static inline uint32_t getRecurrenceBytes(const uint8_t *data)
+{
+    uint32_t recurrence = 0;
+    recurrence |= data[3] << 24;
+    recurrence |= data[4] << 16;
+    recurrence |= data[5] << 8;
+    recurrence |= data[6];
+    return recurrence;
+}
+
+static inline void setAlarmComand(uint8_t alarmIndex, const std::string &value)
+{
+    // Common logic for handling alarm commands
+    // You can access the alarmIndex parameter and the value string here
+    // Implement the specific logic based on the alarmIndex and value
+}
+
+static inline void setUnixTimeBytes(uint64_t unixTime)
+{
+    for (int byte = 0; byte < 8; byte++)
+    {
+        response[3 + byte] = (unixTime >> ((7 - byte) * 8)) & 0xFF;
+    }
+}
+
+static inline uint64_t getUnixTimeBytes(const uint8_t *data)
+{
+    uint64_t unixTime = 0;
+    for (int byte = 0; byte < 8; byte++)
+    {
+        unixTime |= static_cast<uint64_t>(data[3 + byte]) << ((7 - byte) * 8);
+    }
+    return unixTime;
 }

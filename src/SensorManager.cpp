@@ -15,15 +15,15 @@ SensorManager::SensorManager()
 
     SHT40Adapter *sht40 = new SHT40Adapter();
     Bme680Adapter *bme = new Bme680Adapter();
-    addSensor(TEMPERATURE, 60, sht40);
-    addSensor(HUMIDITY, 60, sht40);
-    addSensor(PRESSURE, 60, bme);
-    addSensor(ALTITUDE, 60, bme);
-    addSensor(VOCS, 60, bme);
+    addSensor(TEMPERATURE, DEFAULT_RECURRENCE, sht40);
+    addSensor(HUMIDITY, DEFAULT_RECURRENCE, sht40);
+    addSensor(PRESSURE, DEFAULT_RECURRENCE, bme);
+    addSensor(ALTITUDE, DEFAULT_RECURRENCE, bme);
+    addSensor(VOCS, DEFAULT_RECURRENCE, bme);
     Veml7700Adapter *veml = new Veml7700Adapter();
-    addSensor(ILLUMINATION, 60, veml);
+    addSensor(ILLUMINATION, DEFAULT_RECURRENCE, veml);
     AdcMicrophoneAdapter *mic = new AdcMicrophoneAdapter();
-    addSensor(NOISE, 60, mic);
+    addSensor(NOISE, DEFAULT_RECURRENCE, mic);
 }
 
 void SensorManager::addSensor(ParameterType parameter, int recurrence_value, AbstractSensor *sensor)

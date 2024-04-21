@@ -2,6 +2,7 @@
 #define SENSOR_MANAGER_H
 
 #include "sensor/ParameterSensor.hpp"
+#include <Arduino.h>
 
 #define MAX_SENSORS 8
 
@@ -20,6 +21,7 @@ public:
 
     // Function to set recurrence for a sensor with a given index
     void setRecurrenceWithIndex(ParameterType index, int recurrence);
+    uint32_t getRecurrenceWithIndex(ParameterType index);
 
     // Function to begin reading for all sensors
     void initAll();

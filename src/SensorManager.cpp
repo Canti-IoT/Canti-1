@@ -3,12 +3,11 @@
 #include <sensor/Veml7700Adapter.hpp>
 #include <sensor/AdcMicrophoneAdapter.hpp>
 #include "sensor/SHT40Adapter.hpp"
-#include <debug.h>
 #include <RTCSingleton.hpp>
 
 RTC_DATA_ATTR float value[MAX_SENSORS];
 RTC_DATA_ATTR uint64_t last_read[MAX_SENSORS];
-RTC_DATA_ATTR int recurrence[MAX_SENSORS];
+RTC_DATA_ATTR uint32_t recurrence[MAX_SENSORS];
 
 SensorManager::SensorManager()
 {
@@ -67,6 +66,17 @@ void SensorManager::setRecurrenceWithIndex(ParameterType index, int new_recurren
     }
 }
 
+uint32_t SensorManager::getRecurrenceWithIndex(ParameterType index)
+{
+    for (int i = 0; i < currentSize; ++i)
+    {
+        if (sensors[i].parameter == index)
+        {
+            return recurrence[i];
+        }
+    }
+}
+
 void SensorManager::initAll()
 {
     for (int i = 0; i < currentSize; ++i)
@@ -101,7 +111,6 @@ void SensorManager::loop()
     switch (currentState)
     {
     case ManagingStates::INITIALIZATION:
-        DEBUG("Entering INITIALIZATION state. Iteration count: %d\n", iterationCount);
         // Initialize one sensor at a time
         if (iterationCount < currentSize)
         {
@@ -119,7 +128,6 @@ void SensorManager::loop()
         break;
 
     case ManagingStates::TESTING:
-        DEBUG("Entering TESTING state. Iteration count: %d\n", iterationCount);
         // Test one sensor at a time
         if (iterationCount < currentSize)
         {
@@ -137,7 +145,6 @@ void SensorManager::loop()
         break;
 
     case ManagingStates::READING:
-        DEBUG("Entering READING state. Iteration count: %d\n", iterationCount);
         // Read one sensor at a time
         if (iterationCount < currentSize)
         {
@@ -156,7 +163,6 @@ void SensorManager::loop()
         break;
 
     case ManagingStates::WAITING:
-        DEBUG("Entering WAITING state. Iteration count: %d\n", iterationCount);
         // Check if any recurrence has expired
         for (int i = 0; i < currentSize; ++i)
         {

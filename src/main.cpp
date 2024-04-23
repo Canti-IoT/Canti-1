@@ -9,24 +9,23 @@
 #include <SensorManager.hpp>
 #include <RTCSingleton.hpp>
 #include <buzzer.hpp>
+#include <AlarmManager.hpp>
 
 #define SDA_PIN 8
 #define SCL_PIN 9
-#define BUZZER_PIN 2
+#define BUZZER_PIN 5
 
 BLEServerManager *pServerManager = nullptr;
 SensorManager *sensorManager = nullptr;
-
-
-
-Buzzer b(BUZZER_PIN);
+Buzzer *buzzer = new Buzzer(BUZZER_PIN);
+AlarmManager alarmManager(buzzer);
 
 #define GMT_OFFSET (3600 * 3)
 // ESP32Time RTCSingleton::rtc(GMT_OFFSET);
 
 void setup()
 {
-  
+
   // DEBUGINIT(115200);
   USBSerial.begin(115200);
   while (!USBSerial)
@@ -45,32 +44,37 @@ void setup()
   pServerManager->startAdvertising();
 
   RTCSingleton::rtc.offset = GMT_OFFSET;
-  RTCSingleton::rtc.setTime(BUILD_TIMESTAMP+30);
+  RTCSingleton::rtc.setTime(BUILD_TIMESTAMP + 30);
 
   sensorManager = &SensorManager::getInstance();
 
   DEBUG("%d %d %d", RTCSingleton::rtc.getYear(), RTCSingleton::rtc.getMonth(), RTCSingleton::rtc.getDay());
+
+  alarmManager.setAlarm(0, ParameterType::TEMPERATURE, IntervalType::INSIDE, 15.0, 23.0);
+  // alarmManager.enableAlarm(0);
   //   // Set wake-up time to 60 seconds (in microseconds)
   // esp_sleep_enable_timer_wakeup(60 * 1000000);
   // delay(1000);
   // DEBUG("Entering Light Sleep mode...");
   // esp_light_sleep_start();
   // DEBUG("Exited Light Sleep mode");
-  b.init();
-  b.enable();
+  buzzer->init();
+  buzzer->enable();
 }
 
 uint64_t last_read_main = 0;
 
 void loop()
 {
-  if(RTCSingleton::rtc.getSecond() % 5 == 0) {
-  TIMESTAMP();
-  DEBUG("\n");
+  if (RTCSingleton::rtc.getSecond() % 5 == 0)
+  {
+    TIMESTAMP();
+    DEBUG("\n");
   }
   delay(500);
   pServerManager->loopCycle();
   sensorManager->loop();
+  alarmManager.loop();
   if (last_read_main == 0 || last_read_main + 15000 < millis())
   {
     TIMESTAMP();
@@ -93,8 +97,6 @@ void loop()
     TIMESTAMP();
     DEBUG("Read finished\n");
   }
-  b.playTune1();
-  b.disable();
 }
 
 #endif

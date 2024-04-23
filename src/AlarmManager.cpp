@@ -13,9 +13,8 @@ bool new_data = false;
 
 Buzzer *b = nullptr;
 
-AlarmManager::AlarmManager(Buzzer *_b)
+AlarmManager::AlarmManager()
 {
-    b = _b;
     sensorManager4 = &SensorManager::getInstance();
     sensorManager4->setAlarmCallback(std::bind(&AlarmManager::onSensorRead, this));
     // Initialize alarms
@@ -29,6 +28,11 @@ AlarmManager::AlarmManager(Buzzer *_b)
         triggered[i] = 0;   // Initially, all alarms are not triggered
     }
     new_data = false;
+}
+
+void AlarmManager::setBuzzer(Buzzer *_b)
+{
+    b = _b;
 }
 
 void AlarmManager::onSensorRead()

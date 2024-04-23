@@ -22,12 +22,19 @@ typedef struct Alarm
     IntervalType intervalType;
     float lowerValue;
     float upperValue;
-}Alarm;
+} Alarm;
 
 class AlarmManager
 {
 public:
-    AlarmManager(Buzzer *_b);
+    // Static method to get the singleton instance
+    static AlarmManager &getInstance() {
+        static AlarmManager instance;
+        return instance;
+    }
+
+    // Method to set the buzzer
+    void setBuzzer(Buzzer *_b);
 
     // Method to set an alarm
     void setAlarm(uint8_t alarmIndex, uint8_t parameterIndex, IntervalType intervalType, float lowerValue = 0.0f, float upperValue = 0.0f);
@@ -45,6 +52,16 @@ public:
     void loop();
 
     void onSensorRead();
+
+private:
+    // Private constructor to prevent instantiation
+    AlarmManager();
+    // Private copy constructor and assignment operator to prevent cloning
+    AlarmManager(const AlarmManager &) = delete;
+    AlarmManager &operator=(const AlarmManager &) = delete;
+    // Private destructor to prevent deletion
+    ~AlarmManager() = default;
+
 };
 
 #endif

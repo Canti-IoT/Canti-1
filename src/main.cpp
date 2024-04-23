@@ -18,7 +18,7 @@
 BLEServerManager *pServerManager = nullptr;
 SensorManager *sensorManager = nullptr;
 Buzzer *buzzer = new Buzzer(BUZZER_PIN);
-AlarmManager alarmManager(buzzer);
+AlarmManager *alarmManager = nullptr;
 
 #define GMT_OFFSET (3600 * 3)
 // ESP32Time RTCSingleton::rtc(GMT_OFFSET);
@@ -47,10 +47,11 @@ void setup()
   RTCSingleton::rtc.setTime(BUILD_TIMESTAMP + 30);
 
   sensorManager = &SensorManager::getInstance();
+  alarmManager = &AlarmManager::getInstance();
+  alarmManager->setBuzzer(buzzer);
 
   DEBUG("%d %d %d", RTCSingleton::rtc.getYear(), RTCSingleton::rtc.getMonth(), RTCSingleton::rtc.getDay());
 
-  alarmManager.setAlarm(0, ParameterType::TEMPERATURE, IntervalType::INSIDE, 15.0, 23.0);
   // alarmManager.enableAlarm(0);
   //   // Set wake-up time to 60 seconds (in microseconds)
   // esp_sleep_enable_timer_wakeup(60 * 1000000);
@@ -74,7 +75,7 @@ void loop()
   delay(500);
   pServerManager->loopCycle();
   sensorManager->loop();
-  alarmManager.loop();
+  alarmManager->loop();
   if (last_read_main == 0 || last_read_main + 15000 < millis())
   {
     TIMESTAMP();

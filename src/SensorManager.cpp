@@ -184,25 +184,13 @@ void SensorManager::loop()
     }
 }
 
-float SensorManager::getValue(int index)
+float SensorManager::getValue(ParameterType parameter)
 {
     for (int i = 0; i < currentSize; i++)
     {
-        if (index == sensors[i].parameter)
+        if (parameter == sensors[i].parameter)
         {
             return value[i];
         }
     }
-}
-
-bool SensorManager::validateIndex(int index)
-{
-    for (int i = 0; i < currentSize; i++)
-    {
-        if (index == sensors[i].parameter)
-        {
-            return true;
-        }
-    }
-    return false;
 }

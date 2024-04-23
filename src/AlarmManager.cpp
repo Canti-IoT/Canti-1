@@ -116,7 +116,7 @@ void AlarmManager::loop()
             {
                 if (alarms[i][j].parameterIndex != ParameterType::NONE)
                 {
-                    float sensorValue = sensorManager4->getValue(static_cast<uint8_t>(alarms[i][j].parameterIndex));
+                    float sensorValue = sensorManager4->getValue(alarms[i][j].parameterIndex);
                     if (alarms[i][j].intervalType == INSIDE && sensorValue >= alarms[i][j].lowerValue && sensorValue <= alarms[i][j].upperValue)
                     {
                         // alarms[i][j].triggered = true;

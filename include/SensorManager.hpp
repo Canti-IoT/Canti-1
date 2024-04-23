@@ -32,9 +32,7 @@ public:
     void loop();
 
     // Function to get the parameter type by index
-    float getValue(int index);
-
-    bool validateIndex(int index);
+    float getValue(ParameterType parameter);
 
     // Define a function type for the callback
     using AlarmCallback = std::function<void()>;

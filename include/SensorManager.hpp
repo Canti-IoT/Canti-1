@@ -36,10 +36,20 @@ public:
 
     bool validateIndex(int index);
 
+    // Define a function type for the callback
+    using AlarmCallback = std::function<void()>;
+
+    // Function to set the callback function
+    void setAlarmCallback(AlarmCallback callback) {
+        alarmCallback = callback;
+    }
+
 private:
     SensorManager(); // Private constructor to prevent instantiation
     SensorData sensors[MAX_SENSORS]; // Array of SensorData
     int currentSize; // Current size of the array
+    // Member variable to store the callback function pointer
+    AlarmCallback alarmCallback = nullptr;
 };
 
 enum class ManagingStates {

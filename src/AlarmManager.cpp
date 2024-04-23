@@ -41,7 +41,7 @@ void AlarmManager::onSensorRead()
     DEBUG("On sensor read\n");
 }
 
-void AlarmManager::setAlarm(uint8_t alarmIndex, uint8_t parameterIndex, IntervalType intervalType, float lowerValue, float upperValue)
+void AlarmManager::setAlarm(uint8_t alarmIndex, ParameterType parameter, IntervalType intervalType, float lowerValue, float upperValue)
 {
     // Find the first available slot for the parameter index
     int availableSlot = -1;
@@ -61,10 +61,30 @@ void AlarmManager::setAlarm(uint8_t alarmIndex, uint8_t parameterIndex, Interval
     }
 
     // Populate the found slot with the alarm configuration
-    alarms[alarmIndex][availableSlot].parameterIndex = static_cast<ParameterType>(parameterIndex);
+    alarms[alarmIndex][availableSlot].parameterIndex = parameter;
     alarms[alarmIndex][availableSlot].intervalType = intervalType;
     alarms[alarmIndex][availableSlot].lowerValue = lowerValue;
     alarms[alarmIndex][availableSlot].upperValue = upperValue;
+}
+
+Alarm AlarmManager::getAlarm(uint8_t alarmIndex, ParameterType parameter)
+{
+    Alarm emptyAlarm;                                // Create an empty alarm to return if the alarm is not found
+    emptyAlarm.parameterIndex = ParameterType::NONE; // Set the parameter index to NONE for the empty alarm
+
+    // Iterate through the alarms for the specified alarm index
+    for (int i = 0; i < MAX_PARAMETERS_PER_ALARM; ++i)
+    {
+        // Check if the parameter index matches the specified parameter
+        if (alarms[alarmIndex][i].parameterIndex == parameter)
+        {
+            // Return the alarm if found
+            return alarms[alarmIndex][i];
+        }
+    }
+
+    // If the alarm is not found, return the empty alarm
+    return emptyAlarm;
 }
 
 void AlarmManager::enableAlarm(uint8_t alarmIndex)

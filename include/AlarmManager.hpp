@@ -37,7 +37,9 @@ public:
     void setBuzzer(Buzzer *_b);
 
     // Method to set an alarm
-    void setAlarm(uint8_t alarmIndex, uint8_t parameterIndex, IntervalType intervalType, float lowerValue = 0.0f, float upperValue = 0.0f);
+    void setAlarm(uint8_t alarmIndex, ParameterType parameter, IntervalType intervalType, float lowerValue = 0.0f, float upperValue = 0.0f);
+
+    Alarm getAlarm(uint8_t alarmIndex, ParameterType parameter);
 
     // Method to enable an alarm
     void enableAlarm(uint8_t alarmIndex);

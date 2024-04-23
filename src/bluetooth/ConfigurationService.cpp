@@ -3,10 +3,12 @@
 #include <debug.h>
 #include <SensorManager.hpp>
 #include <RTCSingleton.hpp>
+#include <AlarmManager.hpp>
 
 uint8_t cmd = 0;
 uint8_t arg = 0;
 SensorManager *sensorManager2 = nullptr;
+AlarmManager *alarmManager1 = nullptr;
 uint8_t response[20] = {};
 
 static inline void setRecurrenceBytes(uint32_t recurrence);
@@ -36,7 +38,12 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
 
     for (int i = 0; i < value.length(); i++)
     {
-        DEBUG("%x", value[i]);
+        DEBUG("B%d   ", i);
+    }
+    DEBUG("\n");
+    for (int i = 0; i < value.length(); i++)
+    {
+        DEBUG("0x%x ", value[i]);
     }
     DEBUG(", length %d\n", value.length());
     cmd = value[0];                             // Save the command byte
@@ -86,13 +93,18 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
     case 0xB0: // Command to disable alarm 0
     case 0xB1: // Command to disable alarm 1
     case 0xB2: // Command to disable alarm 2
-        // Implement the logic to handle disabling alarms
-        break;
+        alarmManager1->disableAlarm(cmd - 0xB0);
 
     case 0xD0: // Command to delete alarm 0
     case 0xD1: // Command to delete alarm 1
     case 0xD2: // Command to delete alarm 2
-        // Implement the logic to handle deleting alarms
+        alarmManager1->deleteAlarm(cmd - 0xD0);
+        break;
+
+    case 0xE0: // Command to enable alarm 0
+    case 0xE1: // Command to enable alarm 1
+    case 0xE2: // Command to enable alarm 2
+        alarmManager1->enableAlarm(cmd - 0xE0);
         break;
 
     case 0xEE: // Command for time configuration
@@ -168,6 +180,7 @@ void ConfigCharacteristicCallback::onRead(BLECharacteristic *pCharacteristic)
 ConfigurationService::ConfigurationService(BLEServer *pServer)
 {
     sensorManager2 = &SensorManager::getInstance();
+    alarmManager1 = &AlarmManager::getInstance();
 
     // Initialize the service
     pService = pServer->createService(CONFIGURATION_SERVICE_UUID);
@@ -217,11 +230,43 @@ static inline uint32_t getRecurrenceBytes(const uint8_t *data)
     return recurrence;
 }
 
+float reverseBytesToFloat(const uint8_t *bytes)
+{
+    uint8_t reversedBytes[sizeof(float)];
+    for (size_t i = 0; i < sizeof(float); ++i)
+    {
+        reversedBytes[i] = bytes[sizeof(float) - 1 - i];
+    }
+    return *reinterpret_cast<const float *>(reversedBytes);
+}
+
 static inline void setAlarmComand(uint8_t alarmIndex, const std::string &value)
 {
-    // Common logic for handling alarm commands
-    // You can access the alarmIndex parameter and the value string here
-    // Implement the specific logic based on the alarmIndex and value
+
+    ParameterType parameter = static_cast<ParameterType>(value[1]);
+    if (value.length() >= 11)
+    {
+        IntervalType intervalType = static_cast<IntervalType>(value[2]); // Get the interval type
+        // Check if the interval type is valid
+        if (intervalType != INSIDE && intervalType != OUTSIDE && intervalType != DISABLED_INTERVAL)
+        {
+            DEBUG("Invalid interval type\n");
+            return;
+        }
+        // If the interval type is disabled, there is no need to set the lower and upper values
+        float lowerValue = 0.0f;
+        float upperValue = 0.0f;
+        if (intervalType != DISABLED_INTERVAL)
+        {
+            // Extract lower and upper values from the command
+            lowerValue = reverseBytesToFloat(reinterpret_cast<const uint8_t *>(&value[3]));
+            upperValue = reverseBytesToFloat(reinterpret_cast<const uint8_t *>(&value[7]));
+        }
+        DEBUG("alarm index %d\nparameter %d\n interval %d\nlower %f\nupper %f\n", alarmIndex, parameter, intervalType, lowerValue, upperValue);
+        // alarmManager1->setAlarm(alarmIndex, parameter, intervalType, lowerValue, upperValue);
+    }
+
+    // Set the alarm
 }
 
 static inline void setUnixTimeBytes(uint64_t unixTime)

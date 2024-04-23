@@ -15,8 +15,8 @@ SensorManager::SensorManager()
 
     SHT40Adapter *sht40 = new SHT40Adapter();
     Bme680Adapter *bme = new Bme680Adapter();
-    addSensor(TEMPERATURE, DEFAULT_RECURRENCE, sht40);
-    addSensor(HUMIDITY, DEFAULT_RECURRENCE, sht40);
+    addSensor(TEMPERATURE, DEFAULT_RECURRENCE, bme);
+    addSensor(HUMIDITY, DEFAULT_RECURRENCE, bme);
     addSensor(PRESSURE, DEFAULT_RECURRENCE, bme);
     addSensor(ALTITUDE, DEFAULT_RECURRENCE, bme);
     addSensor(VOCS, DEFAULT_RECURRENCE, bme);
@@ -152,6 +152,10 @@ void SensorManager::loop()
             {
                 value[iterationCount] = sensors[iterationCount].sensor->readValue(sensors[iterationCount].parameter);
                 last_read[iterationCount] = RTCSingleton::rtc.getEpoch();
+                if (alarmCallback)
+                {
+                    alarmCallback();
+                }
             }
             iterationCount++;
         }

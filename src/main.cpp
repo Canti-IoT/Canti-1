@@ -8,18 +8,25 @@
 #include "bluetooth/BLEServerManager.hpp"
 #include <SensorManager.hpp>
 #include <RTCSingleton.hpp>
+#include <buzzer.hpp>
+
+#define SDA_PIN 8
+#define SCL_PIN 9
+#define BUZZER_PIN 2
 
 BLEServerManager *pServerManager = nullptr;
 SensorManager *sensorManager = nullptr;
 
-#define SDA_PIN 8
-#define SCL_PIN 9
+
+
+Buzzer b(BUZZER_PIN);
 
 #define GMT_OFFSET (3600 * 3)
 // ESP32Time RTCSingleton::rtc(GMT_OFFSET);
 
 void setup()
 {
+  
   // DEBUGINIT(115200);
   USBSerial.begin(115200);
   while (!USBSerial)
@@ -49,12 +56,18 @@ void setup()
   // DEBUG("Entering Light Sleep mode...");
   // esp_light_sleep_start();
   // DEBUG("Exited Light Sleep mode");
+  b.init();
+  b.enable();
 }
 
 uint64_t last_read_main = 0;
 
 void loop()
 {
+  if(RTCSingleton::rtc.getSecond() % 5 == 0) {
+  TIMESTAMP();
+  DEBUG("\n");
+  }
   delay(500);
   pServerManager->loopCycle();
   sensorManager->loop();
@@ -80,6 +93,8 @@ void loop()
     TIMESTAMP();
     DEBUG("Read finished\n");
   }
+  b.playTune1();
+  b.disable();
 }
 
 #endif

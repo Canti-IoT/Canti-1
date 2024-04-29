@@ -17,16 +17,12 @@ void ValueCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
     // Get the value written to the characteristic
     std::string value = pCharacteristic->getValue();
     p = static_cast<ParameterType>(value[0]);
-    float sensorValue = sensorManager3->getValue(p);
-    pCharacteristic->setValue(sensorValue);
-    pCharacteristic->notify();
 }
 
 void ValueCharacteristicCallback::onRead(BLECharacteristic *pCharacteristic)
 {
-    // This depends on how you store the value you want to read
-    // For example, if you have a sensor value to send:
-    float sensorValue = sensorManager3->getValue(p);
+    ParameterType currentParameter = static_cast<ParameterType>(pCharacteristic->getValue()[0]);
+    float sensorValue = sensorManager3->getValue(currentParameter);
     pCharacteristic->setValue(sensorValue);
     pCharacteristic->notify();
 }

@@ -5,17 +5,51 @@
 #include <RTCSingleton.hpp>
 #include <AlarmManager.hpp>
 
-uint8_t cmd = 0;
-uint8_t arg = 0;
+enum Commands
+{
+    Reset = 0x00,
+    Recurrence = 0xF1,
+    ResetRecurrence = 0xF2,
+    AlarmCmd = 0xA0,
+    AlarmDisable = 0xB0,
+    AlarmDelete = 0xD0,
+    AlarmEnable = 0xE0,
+    Unixtime = 0xEE,
+};
+Commands comState = Commands::Reset;
+
+enum RecurrenceStates
+{
+    RecurrenceInitState,
+    RecurrenceSelectedParameter,
+    WriteValue,
+    ReadValue
+};
+RecurrenceStates recurrenceState = RecurrenceStates::RecurrenceInitState;
+
+enum AlarmSettingStates
+{
+    AlarmInitState,
+    AlarmSelectedParameter,
+    WriteIntervalType,
+    WriteLowerLimit,
+    WriteUpperLimit,
+    ReadIntervalType,
+    ReadLowerLimit,
+    ReadUpperLimit,
+};
+AlarmSettingStates alarmStates = AlarmSettingStates::AlarmSelectedParameter;
+uint8_t alarmId = 0;
+float lowerValue;
+float upperValue;
+int interval;
+uint64_t epoch;
+
 SensorManager *sensorManager2 = nullptr;
 AlarmManager *alarmManager1 = nullptr;
-uint8_t response[20] = {};
 
-static inline void setRecurrenceBytes(uint32_t recurrence);
-static inline uint32_t getRecurrenceBytes(const uint8_t *data);
-static inline void setAlarmComand(uint8_t alarmIndex, const std::string &value);
-static inline void setUnixTimeBytes(uint64_t unixTime);
-static inline uint64_t getUnixTimeBytes(const uint8_t *data);
+ParameterType parameter = ParameterType::NONE;
+IntervalType intervalType = IntervalType::DISABLED_INTERVAL;
 
 class ConfigCharacteristicCallback : public BLECharacteristicCallbacks
 {
@@ -26,154 +60,228 @@ class ConfigCharacteristicCallback : public BLECharacteristicCallbacks
 void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
 {
     std::string value = pCharacteristic->getValue();
-    TIMESTAMP();
-    DEBUG("Received config data\n");
-
-    if (value.length() < 1)
+    int data;
+    // Check if the received value is empty or not
+    if (value.empty())
     {
         // Invalid command
         DEBUG("Empty command\n");
+        DEBUG("State Cmd: %d\n", comState);
+        comState = Reset;
         return;
     }
 
-    for (int i = 0; i < value.length(); i++)
+    // Extract the command byte
+    DEBUG("Data length: %d\n", value.length());
+    if (value.length() == 1 && comState == Commands::Reset)
     {
-        DEBUG("B%d   ", i);
+        Commands cmd = static_cast<Commands>(value[0]);
+        DEBUG("This is a command, received %d\n", cmd);
+        // Update command state based on the received command
+        switch (cmd)
+        {
+        case Recurrence:
+            comState = Recurrence;
+            recurrenceState = RecurrenceStates::RecurrenceInitState;
+            break;
+        case ResetRecurrence:
+            DEBUG("This is ResetRecurrence command\n");
+            comState = ResetRecurrence;
+            // Handle reset recurrence command
+            break;
+        case AlarmCmd:
+            alarmId = 0;
+            alarmStates = AlarmInitState;
+            comState = AlarmCmd;
+            break;
+        case AlarmCmd + 1:
+            alarmId = 1;
+            alarmStates = AlarmInitState;
+            comState = AlarmCmd;
+            break;
+        case AlarmCmd + 2:
+            alarmId = 2;
+            alarmStates = AlarmInitState;
+            comState = AlarmCmd;
+            break;
+        case AlarmDisable:
+            alarmManager1->disableAlarm(0);
+            comState = Reset;
+            break;
+        case AlarmDisable + 1:
+            alarmManager1->disableAlarm(1);
+            comState = Reset;
+            break;
+        case AlarmDisable + 2:
+            alarmManager1->disableAlarm(2);
+            comState = Reset;
+            break;
+        case AlarmDelete:
+            alarmManager1->deleteAlarm(0);
+            comState = Reset;
+            break;
+        case AlarmDelete + 1:
+            alarmManager1->deleteAlarm(1);
+            comState = Reset;
+            break;
+        case AlarmDelete + 2:
+            alarmManager1->deleteAlarm(2);
+            comState = Reset;
+            break;
+        case AlarmEnable:
+            alarmManager1->enableAlarm(0);
+            comState = Reset;
+            break;
+        case AlarmEnable + 1:
+            alarmManager1->enableAlarm(1);
+            comState = Reset;
+            break;
+        case AlarmEnable + 2:
+            alarmManager1->enableAlarm(2);
+            comState = Reset;
+            break;
+        case Unixtime:
+            DEBUG("This is Unixtime command\n");
+            comState = Unixtime;
+            // Handle Unix time command
+            break;
+        default:
+            // Handle invalid commands
+            DEBUG("Invalid command %d\n", comState);
+            comState = Reset;
+            return;
+        }
     }
-    DEBUG("\n");
-    for (int i = 0; i < value.length(); i++)
+    else if (value.length() >= 1 && comState == Commands::Recurrence)
     {
-        DEBUG("0x%x ", value[i]);
+        // Handle commands based on the current state
+        switch (recurrenceState)
+        {
+        case RecurrenceStates::RecurrenceInitState:
+            parameter = static_cast<ParameterType>(value[0]);
+            DEBUG("Selected parameter %d\n", parameter);
+            recurrenceState = RecurrenceSelectedParameter;
+            break;
+        case RecurrenceStates::RecurrenceSelectedParameter:
+            data = static_cast<int>(value[0]);
+            sensorManager2->setRecurrenceWithIndex(parameter, data);
+            DEBUG("Setting recurrence %d for parameter %d\n", data, parameter);
+            recurrenceState = RecurrenceInitState;
+            comState = Commands::Reset;
+            break;
+        default:
+            // Handle invalid states
+            DEBUG("Invalid state\n");
+            break;
+        }
     }
-    DEBUG(", length %d\n", value.length());
-    cmd = value[0];                             // Save the command byte
-    arg = (value.length() >= 2) ? value[1] : 0; // Default argument to 0 if not provided
-
-    // Check the command type
-    switch (cmd)
+    else if (value.length() >= 1 && comState == Commands::ResetRecurrence)
     {
-    case 0xF1: // Command for accessing recurrence configuration
-        if (value.length() >= 7)
+        parameter = static_cast<ParameterType>(value[0]);
+        sensorManager2->setRecurrenceWithIndex(parameter, DEFAULT_RECURRENCE);
+        comState = Commands::Reset;
+    }
+    else if (value.length() >= 1 && comState == Commands::AlarmCmd)
+    {
+        switch (alarmStates)
         {
-            uint32_t recurrenceValue = getRecurrenceBytes(reinterpret_cast<const uint8_t *>(value.data()));
-            DEBUG("New REcurrence %d for p %d\n", recurrenceValue, arg);
-            sensorManager2->setRecurrenceWithIndex(static_cast<ParameterType>(arg), recurrenceValue);
+        case AlarmSettingStates::AlarmInitState:
+            parameter = static_cast<ParameterType>(value[0]);
+            DEBUG("Selected parameter %d\n", parameter);
+            alarmStates = AlarmSelectedParameter;
+            break;
+        case AlarmSettingStates::AlarmSelectedParameter:
+            intervalType = static_cast<IntervalType>(value[0]);
+            DEBUG("Interval type %d\n", intervalType);
+            alarmStates = WriteIntervalType;
+            break;
+        case AlarmSettingStates::WriteIntervalType:
+            lowerValue = static_cast<float>(value[0]);
+            DEBUG("Lower value %f\n", lowerValue);
+            alarmStates = WriteLowerLimit;
+            break;
+        case AlarmSettingStates::WriteLowerLimit:
+            upperValue = static_cast<float>(value[0]);
+            DEBUG("Upper value %f\n", lowerValue);
+            alarmManager1->setAlarm(alarmId, parameter, intervalType, lowerValue, upperValue);
+            alarmStates = AlarmInitState;
+            comState = Commands::Reset;
+            break;
+        default:
+            // Handle invalid states
+            DEBUG("Invalid state\n");
+            break;
         }
-        else if (value.length() >= 2)
-        {
-            DEBUG("Reading recurrence\n");
-            uint32_t recurrence = sensorManager2->getRecurrenceWithIndex(static_cast<ParameterType>(arg));
-            response[0] = cmd;
-            response[1] = arg;
-            setRecurrenceBytes(recurrence);
-            pCharacteristic->setValue(response, 7);
-            pCharacteristic->notify();
-        }
-        break;
-
-    case 0xF2: // Command for resetting to default recurrence
-        if (arg != 0)
-        {
-            sensorManager2->setRecurrenceWithIndex(static_cast<ParameterType>(arg), DEFAULT_RECURRENCE);
-            response[0] = cmd;
-            response[1] = arg;
-            setRecurrenceBytes(DEFAULT_RECURRENCE);
-            pCharacteristic->setValue(response, 7);
-            pCharacteristic->notify();
-        }
-        break;
-
-    case 0xA0: // Command to set alarm parameter 0
-    case 0xA1: // Command to set alarm parameter 1
-    case 0xA2: // Command to set alarm parameter 2
-        // Implement the logic to handle setting alarms
-        setAlarmComand(cmd - 0xA0, value);
-        break;
-
-    case 0xB0: // Command to disable alarm 0
-    case 0xB1: // Command to disable alarm 1
-    case 0xB2: // Command to disable alarm 2
-        alarmManager1->disableAlarm(cmd - 0xB0);
-
-    case 0xD0: // Command to delete alarm 0
-    case 0xD1: // Command to delete alarm 1
-    case 0xD2: // Command to delete alarm 2
-        alarmManager1->deleteAlarm(cmd - 0xD0);
-        break;
-
-    case 0xE0: // Command to enable alarm 0
-    case 0xE1: // Command to enable alarm 1
-    case 0xE2: // Command to enable alarm 2
-        alarmManager1->enableAlarm(cmd - 0xE0);
-        break;
-
-    case 0xEE: // Command for time configuration
-        if (value.length() >= 11)
-        {
-            // Extract UNIXTIME from bytes 3 to 10
-            uint64_t unixTime = getUnixTimeBytes(reinterpret_cast<const uint8_t *>(value.data()));
-            RTCSingleton::rtc.setTime(unixTime);
-            response[0] = cmd;
-            response[1] = 0;
-            setUnixTimeBytes(unixTime);
-            pCharacteristic->setValue(response, 11);
-            pCharacteristic->notify();
-        }
-        else
-        {
-            response[0] = cmd;
-            response[1] = 0;
-            setUnixTimeBytes(RTCSingleton::rtc.getEpoch());
-            pCharacteristic->setValue(response, 11);
-            pCharacteristic->notify();
-        }
-        break;
-
-    default:
-        cmd = 0;
-        arg = 0;
-        break;
+    }
+    else if (value.length() >= 8 && comState == Commands::Unixtime)
+    {
+        epoch = static_cast<uint64_t>(value[0]);
+        DEBUG("Old epoch %ld\n", RTCSingleton::rtc.getEpoch());
+        DEBUG("Seting new epoch %ld\n", epoch);
+        RTCSingleton::rtc.setTime(epoch);
+        comState = Commands::Reset;
     }
 }
 
 void ConfigCharacteristicCallback::onRead(BLECharacteristic *pCharacteristic)
 {
-    switch (cmd)
+    Alarm alarm;
+    std::string value = pCharacteristic->getValue();
+    DEBUG("comstate %d, recurencestate %d\n", comState, recurrenceState);
+    if (comState == Commands::Recurrence && recurrenceState == RecurrenceSelectedParameter)
     {
-    case 0xF1: // Command for accessing recurrence configuration
-        DEBUG("0xF1 to read recurrence\n");
-        pCharacteristic->setValue(response, 7);
+        uint32_t recurrence = sensorManager2->getRecurrenceWithIndex(parameter);
+        pCharacteristic->setValue(recurrence);
         pCharacteristic->notify();
-        break;
-
-    case 0xF2: // Command for resetting to default recurrence
-        break;
-
-    case 0xA0: // Command to set alarm parameter 0
-    case 0xA1: // Command to set alarm parameter 1
-    case 0xA2: // Command to set alarm parameter 2
-        break;
-
-    case 0xB0: // Command to disable alarm 0
-    case 0xB1: // Command to disable alarm 1
-    case 0xB2: // Command to disable alarm 2
-        break;
-
-    case 0xD0: // Command to delete alarm 0
-    case 0xD1: // Command to delete alarm 1
-    case 0xD2: // Command to delete alarm 2
-        break;
-
-    case 0xEE: // Command for time configuration
-        response[0] = cmd;
-        response[1] = 0;
-        setUnixTimeBytes(RTCSingleton::rtc.getEpoch());
-        pCharacteristic->setValue(response, 11);
+        recurrenceState = RecurrenceInitState;
+        comState = Commands::Reset;
+    }
+    else if (comState == Commands::AlarmCmd)
+    {
+        switch (alarmStates)
+        {
+        case AlarmSettingStates::AlarmSelectedParameter:
+            alarmStates = ReadIntervalType;
+            alarm = alarmManager1->getAlarm(alarmId, parameter);
+            interval = alarm.intervalType;
+            pCharacteristic->setValue(interval);
+            pCharacteristic->notify();
+            DEBUG("Interval type: %d\n", alarm.intervalType);
+            break;
+        case AlarmSettingStates::ReadIntervalType:
+            alarm = alarmManager1->getAlarm(alarmId, parameter);
+            pCharacteristic->setValue(alarm.lowerValue);
+            pCharacteristic->notify();
+            DEBUG("Lower value: %d\n", alarm.lowerValue);
+            alarmStates = ReadLowerLimit;
+            break;
+        case AlarmSettingStates::ReadLowerLimit:
+            alarm = alarmManager1->getAlarm(alarmId, parameter);
+            pCharacteristic->setValue(alarm.upperValue);
+            pCharacteristic->notify();
+            DEBUG("Upper value: %d\n", alarm.upperValue);
+            comState = Commands::Reset;
+            break;
+        default:
+            // Handle invalid states
+            DEBUG("Invalid state\n");
+            break;
+        }
+    }
+    else if (comState == Commands::Unixtime)
+    {
+        epoch = RTCSingleton::rtc.getEpoch();
+        DEBUG("Current epoch %ld\n", epoch);
+        pCharacteristic->setValue((uint8_t*)&epoch, 8);
         pCharacteristic->notify();
-        break;
-
-    default:
-        break;
+        comState = Commands::Reset;
+    }
+    else
+    {
+        DEBUG("Read\n");
+        int value = comState;
+        pCharacteristic->setValue(value);
+        pCharacteristic->notify();
     }
 }
 
@@ -210,79 +318,4 @@ ConfigurationService::ConfigurationService(BLEServer *pServer)
 void ConfigurationService::noitify()
 {
     pCharacteristic->notify();
-}
-
-static inline void setRecurrenceBytes(uint32_t recurrence)
-{
-    response[3] = recurrence >> 24;
-    response[4] = recurrence >> 16;
-    response[5] = recurrence >> 8;
-    response[6] = recurrence;
-}
-
-static inline uint32_t getRecurrenceBytes(const uint8_t *data)
-{
-    uint32_t recurrence = 0;
-    recurrence |= data[3] << 24;
-    recurrence |= data[4] << 16;
-    recurrence |= data[5] << 8;
-    recurrence |= data[6];
-    return recurrence;
-}
-
-float reverseBytesToFloat(const uint8_t *bytes)
-{
-    uint8_t reversedBytes[sizeof(float)];
-    for (size_t i = 0; i < sizeof(float); ++i)
-    {
-        reversedBytes[i] = bytes[sizeof(float) - 1 - i];
-    }
-    return *reinterpret_cast<const float *>(reversedBytes);
-}
-
-static inline void setAlarmComand(uint8_t alarmIndex, const std::string &value)
-{
-
-    ParameterType parameter = static_cast<ParameterType>(value[1]);
-    if (value.length() >= 11)
-    {
-        IntervalType intervalType = static_cast<IntervalType>(value[2]); // Get the interval type
-        // Check if the interval type is valid
-        if (intervalType != INSIDE && intervalType != OUTSIDE && intervalType != DISABLED_INTERVAL)
-        {
-            DEBUG("Invalid interval type\n");
-            return;
-        }
-        // If the interval type is disabled, there is no need to set the lower and upper values
-        float lowerValue = 0.0f;
-        float upperValue = 0.0f;
-        if (intervalType != DISABLED_INTERVAL)
-        {
-            // Extract lower and upper values from the command
-            lowerValue = reverseBytesToFloat(reinterpret_cast<const uint8_t *>(&value[3]));
-            upperValue = reverseBytesToFloat(reinterpret_cast<const uint8_t *>(&value[7]));
-        }
-        DEBUG("alarm index %d\nparameter %d\n interval %d\nlower %f\nupper %f\n", alarmIndex, parameter, intervalType, lowerValue, upperValue);
-        // alarmManager1->setAlarm(alarmIndex, parameter, intervalType, lowerValue, upperValue);
-    }
-
-    // Set the alarm
-}
-
-static inline void setUnixTimeBytes(uint64_t unixTime)
-{
-    for (int byte = 0; byte < 8; byte++)
-    {
-        response[3 + byte] = (unixTime >> ((7 - byte) * 8)) & 0xFF;
-    }
-}
-
-static inline uint64_t getUnixTimeBytes(const uint8_t *data)
-{
-    uint64_t unixTime = 0;
-    for (int byte = 0; byte < 8; byte++)
-    {
-        unixTime |= static_cast<uint64_t>(data[3 + byte]) << ((7 - byte) * 8);
-    }
-    return unixTime;
 }

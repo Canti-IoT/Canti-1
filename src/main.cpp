@@ -26,12 +26,13 @@ AlarmManager *alarmManager = nullptr;
 void setup()
 {
 
-  // DEBUGINIT(115200);
-  USBSerial.begin(115200);
+  DEBUGINIT(115200);
+  #ifdef DEBUGENABLE
   while (!USBSerial)
   {
     delay(20);
   }
+  #endif
   DEBUG("Setup started\n");
 
   Wire.setPins(SDA_PIN, SCL_PIN);

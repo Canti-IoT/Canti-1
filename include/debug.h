@@ -5,16 +5,17 @@
 #include <RTCSingleton.hpp>
 
 #if DEBUGENABLE == 1
-    #define DEBUGINIT(rate) USBSerial.begin(rate)
-#endif
 
-#if DEBUGENABLE == 1
-    #define DEBUG(...) USBSerial.printf(__VA_ARGS__)
-#endif
+#define DEBUGINIT(rate) USBSerial.begin(rate)
+#define DEBUG(...) USBSerial.printf(__VA_ARGS__)
+#define TIMESTAMP() DEBUG("%d:%d:%d:%d - ", RTCSingleton::rtc.getHour(), RTCSingleton::rtc.getMinute(), RTCSingleton::rtc.getSecond(), RTCSingleton::rtc.getMillis())
 
-#if DEBUGENABLE == 1
-    #define TIMESTAMP() DEBUG("%d:%d:%d:%d - ", RTCSingleton::rtc.getHour(), RTCSingleton::rtc.getMinute(), RTCSingleton::rtc.getSecond(), RTCSingleton::rtc.getMillis())
+#else
+
+#define DEBUGINIT(rate)
+#define DEBUG(...)
+#define TIMESTAMP()
+
 #endif
-  
 
 #endif /* DEBUG_MACROS_H */

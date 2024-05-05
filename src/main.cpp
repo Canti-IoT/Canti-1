@@ -21,7 +21,6 @@ Buzzer *buzzer = new Buzzer(BUZZER_PIN);
 AlarmManager *alarmManager = nullptr;
 
 #define GMT_OFFSET (3600 * 3)
-// ESP32Time RTCSingleton::rtc(GMT_OFFSET);
 
 void setup()
 {
@@ -68,11 +67,6 @@ uint64_t last_read_main = 0;
 
 void loop()
 {
-  if (RTCSingleton::rtc.getSecond() % 5 == 0)
-  {
-    TIMESTAMP();
-    DEBUG("\n");
-  }
   delay(500);
   pServerManager->loopCycle();
   sensorManager->loop();

@@ -87,6 +87,10 @@ void SensorManager::setRecurrenceWithIndex(ParameterType index, int new_recurren
             break; // Exit loop once recurrence is set
         }
     }
+
+#if DEBUGENABLE == 1
+    printSensorInformation();
+#endif
 }
 
 uint32_t SensorManager::getRecurrenceWithIndex(ParameterType index)

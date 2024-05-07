@@ -114,7 +114,6 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
     }
 
     // Extract the command byte
-    DEBUG("Data length: %d\n", value.length());
     if (value.length() == 1 && comState == Commands::Reset)
     {
         Commands cmd = static_cast<Commands>(value[0]);
@@ -127,7 +126,6 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
             recurrenceState = RecurrenceStates::RecurrenceInitState;
             break;
         case ResetRecurrence:
-            DEBUG("This is ResetRecurrence command\n");
             comState = ResetRecurrence;
             // Handle reset recurrence command
             break;
@@ -201,7 +199,6 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
         {
         case RecurrenceStates::RecurrenceInitState:
             parameter = static_cast<ParameterType>(value[0]);
-            DEBUG("Selected parameter %d\n", parameter);
             recurrenceState = RecurrenceSelectedParameter;
             break;
         case RecurrenceStates::RecurrenceSelectedParameter:
@@ -210,13 +207,11 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
                 converter.c[i] = value[i];
             }
             sensorManager2->setRecurrenceWithIndex(parameter, converter.integer);
-            DEBUG("Setting recurrence %d for parameter %d\n", data, parameter);
             recurrenceState = RecurrenceInitState;
             comState = Commands::Reset;
             break;
         default:
             // Handle invalid states
-            DEBUG("Invalid state\n");
             break;
         }
     }
@@ -232,12 +227,10 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
         {
         case AlarmSettingStates::AlarmInitState:
             parameter = static_cast<ParameterType>(value[0]);
-            DEBUG("Selected parameter %d\n", parameter);
             alarmStates = AlarmSelectedParameter;
             break;
         case AlarmSettingStates::AlarmSelectedParameter:
             intervalType = static_cast<IntervalType>(value[0]);
-            DEBUG("Interval type %d\n", intervalType);
             alarmStates = WriteIntervalType;
             break;
         case AlarmSettingStates::WriteIntervalType:
@@ -247,7 +240,6 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
                 converter.c[i] = value[i];
             }
             lowerValue = converter.real;
-            DEBUG("Lower value %f\n", lowerValue);
             alarmStates = WriteLowerLimit;
             break;
         }

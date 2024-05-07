@@ -5,6 +5,7 @@
 #include "sensor/SHT40Adapter.hpp"
 #include <RTCSingleton.hpp>
 #include <debug.h>
+#include <sensor/AdcBatterySensorAdapter.hpp>
 
 RTC_DATA_ATTR float value[MAX_SENSORS];
 RTC_DATA_ATTR uint64_t last_read[MAX_SENSORS];
@@ -13,17 +14,19 @@ RTC_DATA_ATTR uint32_t recurrence[MAX_SENSORS];
 SensorManager::SensorManager()
 {
     currentSize = 0;
-
+    AdcBatterySensorAdapter *bat = new AdcBatterySensorAdapter();
     SHT40Adapter *sht40 = new SHT40Adapter();
     Bme680Adapter *bme = new Bme680Adapter();
+    Veml7700Adapter *veml = new Veml7700Adapter();
+    AdcMicrophoneAdapter *mic = new AdcMicrophoneAdapter();
+
+    addSensor(BATTERY, DEFAULT_RECURRENCE, bat);
     addSensor(TEMPERATURE, DEFAULT_RECURRENCE, bme);
     addSensor(HUMIDITY, DEFAULT_RECURRENCE, bme);
     addSensor(PRESSURE, DEFAULT_RECURRENCE, bme);
     addSensor(ALTITUDE, DEFAULT_RECURRENCE, bme);
     addSensor(VOCS, DEFAULT_RECURRENCE, bme);
-    Veml7700Adapter *veml = new Veml7700Adapter();
     addSensor(ILLUMINATION, DEFAULT_RECURRENCE, veml);
-    AdcMicrophoneAdapter *mic = new AdcMicrophoneAdapter();
     addSensor(NOISE, DEFAULT_RECURRENCE, mic);
 
 #if DEBUGENABLE == 1

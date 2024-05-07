@@ -74,7 +74,6 @@ void loop()
   if (last_read_main == 0 || last_read_main + 15000 < millis())
   {
     TIMESTAMP();
-    DEBUG("Read started\n");
     float temperature = sensorManager->getValue(TEMPERATURE);
     float humidity = sensorManager->getValue(HUMIDITY);
     float pressure = sensorManager->getValue(PRESSURE);
@@ -82,16 +81,15 @@ void loop()
     float iaq = sensorManager->getValue(VOCS);
     float lux = sensorManager->getValue(ILLUMINATION);
     float db = sensorManager->getValue(NOISE);
-    DEBUG("temp: %f\n", temperature);
-    DEBUG("hum: %f\n", humidity);
-    DEBUG("pre: %f\n", pressure);
-    DEBUG("alt: %f\n", altitude);
-    DEBUG("iaq: %f\n", iaq);
-    DEBUG("lux: %f\n", lux);
-    DEBUG("dbA: %f\n", db);
+    DEBUG("temp: %20f\n", temperature);
+    DEBUG("hum: %20f\n", humidity);
+    DEBUG("pre: %20f\n", pressure);
+    DEBUG("alt: %20f\n", altitude);
+    DEBUG("iaq: %20f\n", iaq);
+    DEBUG("lux: %20f\n", lux);
+    DEBUG("dbA: %20f\n", db);
     last_read_main = millis();
     TIMESTAMP();
-    DEBUG("Read finished\n");
   }
 }
 

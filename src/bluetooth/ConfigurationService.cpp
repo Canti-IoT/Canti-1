@@ -5,6 +5,14 @@
 #include <RTCSingleton.hpp>
 #include <AlarmManager.hpp>
 
+union char32
+{
+    uint8_t c[4];
+    int32_t integer;
+    float_t real;
+};
+char32 converter;
+
 enum Commands
 {
     Reset = 0x00,
@@ -17,6 +25,39 @@ enum Commands
     Unixtime = 0xEE,
 };
 Commands comState = Commands::Reset;
+
+std::string getCommandString(Commands command)
+{
+    switch (command)
+    {
+    case Reset:
+        return "Reset";
+    case Recurrence:
+        return "Recurrence";
+    case ResetRecurrence:
+        return "ResetRecurrence";
+    case AlarmCmd:
+    case AlarmCmd + 1:
+    case AlarmCmd + 2:
+        return "AlarmCmd";
+    case AlarmDisable:
+    case AlarmDisable + 1:
+    case AlarmDisable + 2:
+        return "AlarmDisable";
+    case AlarmDelete:
+    case AlarmDelete + 1:
+    case AlarmDelete + 2:
+        return "AlarmDelete";
+    case AlarmEnable:
+    case AlarmEnable + 1:
+    case AlarmEnable + 2:
+        return "AlarmEnable";
+    case Unixtime:
+        return "Unixtime";
+    default:
+        return "Unknown";
+    }
+}
 
 enum RecurrenceStates
 {
@@ -76,7 +117,7 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
     if (value.length() == 1 && comState == Commands::Reset)
     {
         Commands cmd = static_cast<Commands>(value[0]);
-        DEBUG("This is a command, received %d\n", cmd);
+        DEBUG("This is a command, received %d - %s\n", cmd, getCommandString(cmd).c_str());
         // Update command state based on the received command
         switch (cmd)
         {
@@ -163,8 +204,11 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
             recurrenceState = RecurrenceSelectedParameter;
             break;
         case RecurrenceStates::RecurrenceSelectedParameter:
-            data = static_cast<int>(value[0]);
-            sensorManager2->setRecurrenceWithIndex(parameter, data);
+            for (int i = 0; i < 4; i++)
+            {
+                converter.c[i] = value[i];
+            }
+            sensorManager2->setRecurrenceWithIndex(parameter, converter.integer);
             DEBUG("Setting recurrence %d for parameter %d\n", data, parameter);
             recurrenceState = RecurrenceInitState;
             comState = Commands::Reset;
@@ -196,17 +240,30 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
             alarmStates = WriteIntervalType;
             break;
         case AlarmSettingStates::WriteIntervalType:
-            lowerValue = static_cast<float>(value[0]);
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                converter.c[i] = value[i];
+            }
+            lowerValue = converter.real;
             DEBUG("Lower value %f\n", lowerValue);
             alarmStates = WriteLowerLimit;
             break;
+        }
         case AlarmSettingStates::WriteLowerLimit:
-            upperValue = static_cast<float>(value[0]);
-            DEBUG("Upper value %f\n", lowerValue);
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                converter.c[i] = value[i];
+            }
+            upperValue = converter.real;
+            DEBUG("Setting alarm: Alarm ID: %d, Parameter: %s, Interval Type: %s, Lower Value: %f, Upper Value: %f\n",
+                  alarmId, parameterTypeToString(parameter).c_str(), printIntervalType(intervalType).c_str(), lowerValue, upperValue);
             alarmManager1->setAlarm(alarmId, parameter, intervalType, lowerValue, upperValue);
             alarmStates = AlarmInitState;
             comState = Commands::Reset;
             break;
+        }
         default:
             // Handle invalid states
             DEBUG("Invalid state\n");
@@ -272,7 +329,7 @@ void ConfigCharacteristicCallback::onRead(BLECharacteristic *pCharacteristic)
     {
         epoch = RTCSingleton::rtc.getEpoch();
         DEBUG("Current epoch %ld\n", epoch);
-        pCharacteristic->setValue((uint8_t*)&epoch, 8);
+        pCharacteristic->setValue((uint8_t *)&epoch, 8);
         pCharacteristic->notify();
         comState = Commands::Reset;
     }

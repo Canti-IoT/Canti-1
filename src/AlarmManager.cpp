@@ -153,8 +153,8 @@ void AlarmManager::loop()
                     }
                 }
             }
-            new_data = false;
         }
+        new_data = false;
     }
 
     // Check if any alarm is triggered

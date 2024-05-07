@@ -24,15 +24,15 @@ AlarmManager *alarmManager = nullptr;
 
 void setup()
 {
-
   DEBUGINIT(115200);
-  #ifdef DEBUGENABLE
+#ifdef DEBUGENABLE
   while (!USBSerial)
   {
     delay(20);
   }
-  #endif
+#endif
   DEBUG("Setup started\n");
+  DEBUG("CPU Frequency - %dMhz\n", getCpuFrequencyMhz());
 
   Wire.setPins(SDA_PIN, SCL_PIN);
 
@@ -75,13 +75,15 @@ void loop()
   {
     TIMESTAMP();
     float temperature = sensorManager->getValue(TEMPERATURE);
+    float battery = sensorManager->getValue(BATTERY);
     float humidity = sensorManager->getValue(HUMIDITY);
     float pressure = sensorManager->getValue(PRESSURE);
     float altitude = sensorManager->getValue(ALTITUDE);
     float iaq = sensorManager->getValue(VOCS);
     float lux = sensorManager->getValue(ILLUMINATION);
     float db = sensorManager->getValue(NOISE);
-    DEBUG("temp: %20f\n", temperature);
+    DEBUG("bat: %20f\n", battery);
+    DEBUG("temp: %19f\n", temperature);
     DEBUG("hum: %20f\n", humidity);
     DEBUG("pre: %20f\n", pressure);
     DEBUG("alt: %20f\n", altitude);

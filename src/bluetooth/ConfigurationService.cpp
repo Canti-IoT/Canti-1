@@ -9,6 +9,7 @@ union char32
 {
     uint8_t c[4];
     int32_t integer;
+    uint64_t longInt;
     float_t real;
 };
 char32 converter;
@@ -272,7 +273,11 @@ void ConfigCharacteristicCallback::onWrite(BLECharacteristic *pCharacteristic)
     }
     else if (value.length() >= 8 && comState == Commands::Unixtime)
     {
-        epoch = static_cast<uint64_t>(value[0]);
+        for (int i = 0; i < 8; i++)
+        {
+            converter.c[i] = value[i];
+        }
+        epoch = converter.longInt;
         DEBUG("Old epoch %ld\n", RTCSingleton::rtc.getEpoch());
         DEBUG("Seting new epoch %ld\n", epoch);
         RTCSingleton::rtc.setTime(epoch);

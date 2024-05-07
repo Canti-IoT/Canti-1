@@ -48,6 +48,8 @@ private:
     int currentSize; // Current size of the array
     // Member variable to store the callback function pointer
     AlarmCallback alarmCallback = nullptr;
+    void printSensorInformation();
+    inline void printSensorInfo(int index);
 };
 
 enum class ManagingStates {

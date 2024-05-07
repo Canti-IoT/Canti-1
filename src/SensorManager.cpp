@@ -4,6 +4,7 @@
 #include <sensor/AdcMicrophoneAdapter.hpp>
 #include "sensor/SHT40Adapter.hpp"
 #include <RTCSingleton.hpp>
+#include <debug.h>
 
 RTC_DATA_ATTR float value[MAX_SENSORS];
 RTC_DATA_ATTR uint64_t last_read[MAX_SENSORS];
@@ -24,6 +25,24 @@ SensorManager::SensorManager()
     addSensor(ILLUMINATION, DEFAULT_RECURRENCE, veml);
     AdcMicrophoneAdapter *mic = new AdcMicrophoneAdapter();
     addSensor(NOISE, DEFAULT_RECURRENCE, mic);
+
+#if DEBUGENABLE == 1
+    printSensorInformation();
+#endif
+}
+
+inline void SensorManager::printSensorInfo(int index)
+{
+    DEBUG("Sensor %2d - Parameter: %13s, Recurrence: %3d\n", index + 1, parameterTypeToString(sensors[index].parameter).c_str(), recurrence[index]);
+}
+
+void SensorManager::printSensorInformation()
+{
+    DEBUG("Number of sensors added: %d\n", currentSize);
+    for (int i = 0; i < currentSize; ++i)
+    {
+        printSensorInfo(i);
+    }
 }
 
 void SensorManager::addSensor(ParameterType parameter, int recurrence_value, AbstractSensor *sensor)
@@ -60,7 +79,11 @@ void SensorManager::setRecurrenceWithIndex(ParameterType index, int new_recurren
     {
         if (sensors[i].parameter == index)
         {
+            DEBUG("Old sensor config\n");
+            printSensorInfo(i);
             recurrence[i] = new_recurrence;
+            DEBUG("New sensor config\n");
+            printSensorInfo(i);
             break; // Exit loop once recurrence is set
         }
     }

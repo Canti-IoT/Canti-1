@@ -47,7 +47,7 @@ void AlarmManager::setAlarm(uint8_t alarmIndex, ParameterType parameter, Interva
     int availableSlot = -1;
     for (int i = 0; i < MAX_PARAMETERS_PER_ALARM; ++i)
     {
-        if (alarms[alarmIndex][i].parameterIndex == ParameterType::NONE)
+        if (alarms[alarmIndex][i].parameterIndex == ParameterType::NONE || alarms[alarmIndex][i].parameterIndex == parameter)
         {
             availableSlot = i;
             break;

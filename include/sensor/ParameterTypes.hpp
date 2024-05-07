@@ -1,7 +1,9 @@
 #ifndef PARAMETERTYPE_H
 #define PARAMETERTYPE_H
+#include <string>
 
-enum ParameterType {
+enum ParameterType
+{
     NONE,
     BATTERY = 1,
     TEMPERATURE = 10,
@@ -14,6 +16,6 @@ enum ParameterType {
     UV = 70
 };
 
+std::string parameterTypeToString(ParameterType type);
+
 #endif
-
-

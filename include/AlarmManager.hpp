@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "sensor/ParameterTypes.hpp"
 #include "buzzer.hpp"
+#include <string>
 
 #define MAX_ALARMS 3
 #define MAX_PARAMETERS_PER_ALARM 8
@@ -16,6 +17,8 @@ enum IntervalType
     OUTSIDE
 };
 
+std::string printIntervalType(IntervalType type);
+
 typedef struct Alarm
 {
     ParameterType parameterIndex;
@@ -28,7 +31,8 @@ class AlarmManager
 {
 public:
     // Static method to get the singleton instance
-    static AlarmManager &getInstance() {
+    static AlarmManager &getInstance()
+    {
         static AlarmManager instance;
         return instance;
     }
@@ -63,7 +67,6 @@ private:
     AlarmManager &operator=(const AlarmManager &) = delete;
     // Private destructor to prevent deletion
     ~AlarmManager() = default;
-
 };
 
 #endif

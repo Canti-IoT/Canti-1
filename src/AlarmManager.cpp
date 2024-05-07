@@ -173,3 +173,26 @@ void AlarmManager::loop()
         }
     }
 }
+
+std::string printIntervalType(IntervalType type)
+{
+    std::string typeString;
+
+    // Switch statement to convert enum values to strings
+    switch (type)
+    {
+    case DISABLED_INTERVAL:
+        typeString = "DISABLED";
+        break;
+    case INSIDE:
+        typeString = "INSIDE";
+        break;
+    case OUTSIDE:
+        typeString = "OUTSIDE";
+        break;
+    default:
+        typeString = "UNKNOWN";
+        break;
+    }
+    return typeString;
+}

@@ -37,6 +37,8 @@ public:
         return instance;
     }
 
+    void printAlarms();
+    
     // Method to set the buzzer
     void setBuzzer(Buzzer *_b);
 

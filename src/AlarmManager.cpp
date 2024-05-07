@@ -124,6 +124,7 @@ void AlarmManager::loop()
 {
     if (new_data)
     {
+        DEBUG("Evaluating alarm condition\n");
         // Check if any alarm is triggered
         for (int i = 0; i < MAX_ALARMS; ++i)
         {

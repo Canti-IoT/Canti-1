@@ -38,7 +38,7 @@ public:
     }
 
     void printAlarms();
-    
+
     // Method to set the buzzer
     void setBuzzer(Buzzer *_b);
 
@@ -60,6 +60,8 @@ public:
     void loop();
 
     void onSensorRead();
+
+    void snoozeTriggeredAalarms();
 
 private:
     // Private constructor to prevent instantiation

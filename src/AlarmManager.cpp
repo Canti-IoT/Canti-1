@@ -4,10 +4,13 @@
 
 SensorManager *sensorManager4 = nullptr;
 
+#define ALARM_SNOOZE_TIME (5 * 60)
+
 // Array to store alarms
 RTC_DATA_ATTR Alarm alarms[MAX_ALARMS][MAX_PARAMETERS_PER_ALARM];
 RTC_DATA_ATTR uint8_t triggered[MAX_ALARMS] = {};
 RTC_DATA_ATTR bool enabled[MAX_ALARMS] = {};
+RTC_DATA_ATTR uint64_t snoozeUntil[MAX_ALARMS] = {};
 
 bool new_data = false;
 
@@ -65,7 +68,6 @@ void AlarmManager::setAlarm(uint8_t alarmIndex, ParameterType parameter, Interva
     alarms[alarmIndex][availableSlot].intervalType = intervalType;
     alarms[alarmIndex][availableSlot].lowerValue = lowerValue;
     alarms[alarmIndex][availableSlot].upperValue = upperValue;
-
 }
 
 Alarm AlarmManager::getAlarm(uint8_t alarmIndex, ParameterType parameter)
@@ -123,6 +125,20 @@ void AlarmManager::deleteAlarm(uint8_t alarmIndex)
     }
 }
 
+void AlarmManager::snoozeTriggeredAalarms()
+{
+    // Snooze all triggered alarms
+    for (int i = 0; i < MAX_ALARMS; ++i)
+    {
+        if (triggered[i] > 0)
+        {
+            // Set the snoozeUntil time to current epoch time plus snooze time
+            snoozeUntil[i] = RTCSingleton::rtc.getEpoch() + ALARM_SNOOZE_TIME;
+            triggered[i] = 0; // Reset triggered status
+        }
+    }
+}
+
 void AlarmManager::loop()
 {
     if (new_data)
@@ -163,17 +179,18 @@ void AlarmManager::loop()
     // Check if any alarm is triggered
     for (int i = 0; i < MAX_ALARMS; ++i)
     {
-        if (enabled[i] == false)
+        if (enabled[i] && RTCSingleton::rtc.getEpoch() >= snoozeUntil[i])
         {
-            continue;
-        }
-        // If all parameters are triggered, emit the alarm
-        if (triggered[i] > 0)
-        {
-            new_data = true;
-            b->playTune1();
-            triggered[i] -= 1;
-            DEBUG("Alarm %d trigers remainig %d\n", i, triggered[i]);
+            {
+                // If all parameters are triggered, emit the alarm
+                if (triggered[i] > 0)
+                {
+                    new_data = true;
+                    b->playTune1();
+                    triggered[i] -= 1;
+                    DEBUG("Alarm %d trigers remainig %d\n", i, triggered[i]);
+                }
+            }
         }
     }
 }
@@ -192,8 +209,8 @@ void AlarmManager::printAlarms()
             // Check if the parameter is set
             if (alarms[i][j].parameterIndex != ParameterType::NONE)
             {
-                DEBUG("    Parameter: %s, Interval Type: %s, Lower Value: %.2f, Upper Value: %.2f\n", 
-                parameterTypeToString(alarms[i][j].parameterIndex).c_str(), printIntervalType(alarms[i][j].intervalType).c_str(), alarms[i][j].lowerValue, alarms[i][j].upperValue);
+                DEBUG("    Parameter: %s, Interval Type: %s, Lower Value: %.2f, Upper Value: %.2f\n",
+                      parameterTypeToString(alarms[i][j].parameterIndex).c_str(), printIntervalType(alarms[i][j].intervalType).c_str(), alarms[i][j].lowerValue, alarms[i][j].upperValue);
             }
         }
     }

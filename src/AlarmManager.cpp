@@ -65,6 +65,7 @@ void AlarmManager::setAlarm(uint8_t alarmIndex, ParameterType parameter, Interva
     alarms[alarmIndex][availableSlot].intervalType = intervalType;
     alarms[alarmIndex][availableSlot].lowerValue = lowerValue;
     alarms[alarmIndex][availableSlot].upperValue = upperValue;
+
 }
 
 Alarm AlarmManager::getAlarm(uint8_t alarmIndex, ParameterType parameter)
@@ -93,6 +94,7 @@ void AlarmManager::enableAlarm(uint8_t alarmIndex)
     {
         enabled[alarmIndex] = true;
     }
+    printAlarms();
 }
 
 void AlarmManager::disableAlarm(uint8_t alarmIndex)
@@ -101,6 +103,7 @@ void AlarmManager::disableAlarm(uint8_t alarmIndex)
     {
         enabled[alarmIndex] = false;
     }
+    printAlarms();
 }
 
 void AlarmManager::deleteAlarm(uint8_t alarmIndex)
@@ -171,6 +174,27 @@ void AlarmManager::loop()
             b->playTune1();
             triggered[i] -= 1;
             DEBUG("Alarm %d trigers remainig %d\n", i, triggered[i]);
+        }
+    }
+}
+
+void AlarmManager::printAlarms()
+{
+    // Iterate through all alarms
+    for (int i = 0; i < MAX_ALARMS; ++i)
+    {
+        // Print alarm slot and its status (enabled/disabled)
+        DEBUG("Alarm Slot %d: %s\n", i, (enabled[i] ? "Enabled" : "Disabled"));
+
+        // Print details of each parameter in the alarm
+        for (int j = 0; j < MAX_PARAMETERS_PER_ALARM; ++j)
+        {
+            // Check if the parameter is set
+            if (alarms[i][j].parameterIndex != ParameterType::NONE)
+            {
+                DEBUG("    Parameter: %s, Interval Type: %s, Lower Value: %.2f, Upper Value: %.2f\n", 
+                parameterTypeToString(alarms[i][j].parameterIndex).c_str(), printIntervalType(alarms[i][j].intervalType).c_str(), alarms[i][j].lowerValue, alarms[i][j].upperValue);
+            }
         }
     }
 }

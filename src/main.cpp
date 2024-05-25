@@ -26,9 +26,12 @@ void setup()
 {
   DEBUGINIT(115200);
 #ifdef DEBUGENABLE
-  while (!USBSerial)
+int usb_tries = 0;
+  while (!USBSerial && usb_tries < 10)
   {
     delay(20);
+    usb_tries+=1;
+
   }
 #endif
   DEBUG("Setup started\n");
